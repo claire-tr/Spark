@@ -1,0 +1,54 @@
+//Yunyun Chen
+//Assignment 4 Word Count
+
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkContext._
+import org.apache.spark.SparkConf
+
+object WordCount {
+	def main(args: Array[String]) {
+
+		// initialize spark context
+		val conf = new SparkConf().setMaster("spark://ChenYunyuns-MacBook-Pro.local:7077").setAppName("WordCount")
+		val sc = new SparkContext(conf)
+
+		// paths to each file
+		val path_fileOne = "/Users/YunyunChen1/Desktop/one.txt"
+		val path_fileTwo = "/Users/YunyunChen1/Desktop/two.txt"
+		val path_output = "/Users/YunyunChen1/Desktop/wcOutput"
+
+		// Total Number of words in one.txt
+		// create RDD from text files
+		val fileOne = sc.textFile(path_fileOne)
+
+		// split by spaces, remove unwanted characters
+		// refer to the following webpage
+		//http://stackoverflow.com/questions/11861069/scala-java-library-to-parse-some-text-and-remove-punctuation
+		val words_fileOne = fileOne.flatMap(x=>x.split(" ")).map(x => x.toLowerCase()).map(x=>x.filter(Character.isLetter(_))).map(x =>(x,1))
+		
+		// count of words in file one
+		println("Total Number of Words in One.txt: " + words_fileOne.count())
+
+		// get unique words by reduce
+		val uniques_fileOne = words_fileOne.reduceByKey(_+_)
+
+		println("Total Number of Unique Words in One.txt: " + uniques_fileOne.count())
+		
+		// Process file two
+		val fileTwo = sc.textFile(path_fileTwo)
+		val words_fileTwo = fileTwo.flatMap(x=>x.split(" ")).map(x => x.toLowerCase()).map(x=>x.filter(Character.isLetter(_))).map(x =>(x,1))
+		// Combine words in two files together and reduce
+		val words_comb = uniques_fileOne.union(words_fileTwo).reduceByKey(_+_)
+		// Save the Word Count Information into file
+		words_comb.saveAsTextFile(path_output)
+
+		//from lecture notes
+		//val counts = fileOne.flatMap(line => line.split(" ")).map(word=>(word,1)).reduceByKey(_+_) 
+		//counts.collect()
+		//terminate spark context
+		sc.stop()
+
+
+
+	}
+}
